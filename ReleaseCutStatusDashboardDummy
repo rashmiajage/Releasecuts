@@ -1,0 +1,128 @@
+import React, { Component } from "react";
+import "./ReleaseStatusDashboard.css";
+
+const dummyData = [
+  {
+    name: "App-A",
+    version: "v1.2.5",
+    progress: 100,
+    status: "Completed",
+    updatedTime: "12:45 PM",
+  },
+  {
+    name: "App-B",
+    version: "v1.2.5",
+    progress: 70,
+    status: "In Progress",
+    updatedTime: "12:43 PM",
+  },
+  {
+    name: "App-C",
+    version: "v1.2.5",
+    progress: 0,
+    status: "Pending",
+    updatedTime: "12:40 PM",
+  },
+  {
+    name: "App-D",
+    version: "v1.2.5",
+    progress: 45,
+    status: "Failed",
+    updatedTime: "12:30 PM",
+  },
+];
+
+class AppStatusCard extends Component {
+  getProgressColor(progress) {
+    if (progress === 100) return "green";
+    if (progress >= 70) return "blue";
+    if (progress > 0) return "red";
+    return "gray";
+  }
+
+  render() {
+    const { app } = this.props;
+    const progressColor = this.getProgressColor(app.progress);
+    const statusClass = `status ${app.status.toLowerCase().replace(" ", "-")}`;
+
+    return (
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <strong>{app.name}</strong>{" "}
+            <span className="version">({app.version})</span>
+          </div>
+          <div className={statusClass}>{app.status}</div>
+        </div>
+
+        <div className="card-body">
+          <div className="progress-circle">
+            <svg viewBox="0 0 36 36">
+              <path
+                className="bg"
+                d="M18 2.0845
+                   a 15.9155 15.9155 0 0 1 0 31.831
+                   a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="#eee"
+                strokeWidth="2"
+              />
+              <path
+                className="progress"
+                d="M18 2.0845
+                   a 15.9155 15.9155 0 0 1 0 31.831"
+                fill="none"
+                strokeLinecap="round"
+                strokeWidth="2"
+                stroke={progressColor}
+                strokeDasharray={`${app.progress}, 100`}
+              />
+            </svg>
+            <span className="progress-text">{app.progress}%</span>
+          </div>
+          <div className="card-details">
+            <p>Updated: {app.updatedTime}</p>
+            <div className="links">
+              {app.status === "Failed" && <a href="#">View Error Log</a>}
+              {app.status === "Completed" && <a href="#">View Release Log</a>}
+              {app.status === "In Progress" && <a href="#">View Progress</a>}
+              <a href="#">Jenkins Job</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+class ReleaseStatusDashboard extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      apps: [],
+    };
+  }
+
+  componentDidMount() {
+    // Set dummy data directly
+    this.setState({ apps: dummyData });
+  }
+
+  render() {
+    return (
+      <div className="dashboard">
+        <div className="header">
+          <h2>Release Cut Status</h2>
+          <input type="text" placeholder="Search applications" />
+        </div>
+        <div className="cards-container">
+          {this.state.apps.map((app, index) => (
+            <AppStatusCard key={index} app={app} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+}
+
+export default ReleaseStatusDashboard;
