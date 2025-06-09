@@ -1,0 +1,65 @@
+import com.offbytwo.jenkins.JenkinsServer;
+import com.offbytwo.jenkins.model.Build;
+import com.offbytwo.jenkins.model.BuildWithDetails;
+import com.offbytwo.jenkins.model.JobWithDetails;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+
+public class JenkinsBuildWithStatus {
+
+    public static void main(String[] args) {
+        try {
+            // Jenkins connection
+            String jenkinsUrl = "http://localhost:8080";
+            String username = "admin";
+            String apiToken = "your-api-token";
+
+            JenkinsServer jenkins = new JenkinsServer(new URI(jenkinsUrl), username, apiToken);
+
+            String jobName = "MyParameterizedJob";
+            JobWithDetails job = jenkins.getJob(jobName);
+            if (job == null) {
+                System.out.println("Job not found: " + jobName);
+                return;
+            }
+
+            // Get the next build number BEFORE triggering the build
+            int nextBuildNumber = job.getNextBuildNumber();
+
+            // Build parameters
+            Map<String, String> params = new HashMap<>();
+            params.put("PARAM1", "value1");
+            params.put("PARAM2", "value2");
+
+            // Trigger the build
+            job.build(params, true);
+            System.out.println("Triggered build #" + nextBuildNumber + " for job: " + jobName);
+
+            // Poll until build starts
+            Build build = null;
+            while (build == null) {
+                Thread.sleep(3000); // wait a bit
+                build = job.getBuildByNumber(nextBuildNumber);
+            }
+
+            // Poll until build completes
+            BuildWithDetails buildDetails;
+            do {
+                Thread.sleep(5000); // wait before polling again
+                buildDetails = build.details();
+                System.out.println("Building... " + buildDetails.isBuilding());
+            } while (buildDetails.isBuilding());
+
+            // Output build details
+            System.out.println("\n✅ Build Completed!");
+            System.out.println("Build Number: " + buildDetails.getNumber());
+            System.out.println("Build URL   : " + buildDetails.getUrl());
+            System.out.println("Build Status: " + buildDetails.getResult()); // SUCCESS/FAILURE/etc.
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
