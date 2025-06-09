@@ -1,0 +1,59 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Base64;
+
+public class SplunkBearerSearch {
+
+    public static void main(String[] args) {
+        try {
+            String splunkHost = "https://splunk.yourdomain.com:8089"; // management port
+            String token = "YOUR_SPLUNK_API_TOKEN"; // Bearer token
+            String searchQuery = "search index=_internal | head 5";
+
+            // Encode the search query for URL
+            String encodedSearch = "search=" + java.net.URLEncoder.encode(searchQuery, "UTF-8");
+
+            // REST endpoint for one-shot search
+            URL url = new URL(splunkHost + "/services/search/jobs/export?output_mode=json");
+
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+
+            // Set Authorization header
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+            // Send the search query in the request body
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = encodedSearch.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            // Read the response
+            int responseCode = conn.getResponseCode();
+            System.out.println("Response Code: " + responseCode);
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"))) {
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        response.append(line).append("\n");
+                    }
+                    System.out.println("Search Results:");
+                    System.out.println(response.toString());
+                }
+            } else {
+                System.out.println("Error occurred: " + conn.getResponseMessage());
+            }
+
+            conn.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
