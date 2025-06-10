@@ -1,14 +1,17 @@
 package com.example.jenkinsdemo.service;
 
 import com.cdancy.jenkins.rest.JenkinsClient;
-import com.cdancy.jenkins.rest.domain.job.BuildInfo;
+import com.cdancy.jenkins.rest.domain.build.BuildInfo;
+import com.cdancy.jenkins.rest.domain.job.JobList;
+import com.cdancy.jenkins.rest.domain.queue.Executable;
 import com.cdancy.jenkins.rest.domain.queue.QueueItem;
-import com.cdancy.jenkins.rest.domain.queue.QueueItem.Value;
-import com.cdancy.jenkins.rest.domain.common.RequestStatus;
+import com.cdancy.jenkins.rest.features.BuildsApi;
+import com.cdancy.jenkins.rest.features.JobsApi;
+import com.cdancy.jenkins.rest.features.QueueApi;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class JenkinsService {
@@ -23,51 +26,55 @@ public class JenkinsService {
                 .credentials(username + ":" + apiToken)
                 .build();
 
-        // Trigger parameterized build
-        RequestStatus status = client.jobApi().buildWithParameters(jobName, null, params);
-        if (!status.value()) {
-            return "❌ Failed to queue build for job: " + jobName;
+        JobsApi jobsApi = client.api().jobsApi();
+        QueueApi queueApi = client.api().queueApi();
+        BuildsApi buildsApi = client.api().buildsApi();
+
+        // 1. Trigger build
+        Optional<QueueItem> queueItemOptional = jobsApi.buildWithParameters(null, jobName, params);
+
+        if (queueItemOptional.isEmpty() || queueItemOptional.get().id() == null) {
+            return "❌ Failed to trigger build.";
         }
 
-        System.out.println("✅ Build queued successfully.");
+        Integer queueId = queueItemOptional.get().id();
+        System.out.println("✅ Build queued. Queue ID: " + queueId);
 
-        // Get queue item and wait for build number to be assigned
-        QueueItem queueItem;
+        // 2. Wait for build number to be assigned
+        Optional<Executable> executable = Optional.empty();
         int retry = 0;
-        int maxRetries = 20;
-        Value executable = null;
 
-        do {
+        while (executable.isEmpty() && retry++ < 20) {
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException ignored) {}
 
-            queueItem = client.queueApi().queueItem(status.errors().get(0).context());
-            executable = queueItem.executable();
-            retry++;
-        } while (executable == null && retry < maxRetries);
-
-        if (executable == null) {
-            return "⚠️ Build was queued but did not start in time.";
+            Optional<QueueItem> item = queueApi.queueItem(queueId);
+            if (item.isPresent()) {
+                executable = item.get().executable();
+            }
         }
 
-        int buildNumber = executable.number();
+        if (executable.isEmpty()) {
+            return "⚠️ Timed out waiting for build to start.";
+        }
+
+        int buildNumber = executable.get().number();
         System.out.println("🚀 Build started: #" + buildNumber);
 
-        // Wait for build to complete
+        // 3. Wait for build to complete
         BuildInfo buildInfo;
         do {
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException ignored) {}
-
-            buildInfo = client.jobApi().buildInfo(jobName, buildNumber);
+            buildInfo = buildsApi.buildInfo(null, jobName, buildNumber);
         } while (buildInfo.building());
 
         return String.format("""
-                ✅ Build Complete!
+                ✅ Build Completed!
                 Build Number: %d
-                Status      : %s
+                Result      : %s
                 URL         : %s
                 """,
                 buildNumber,
