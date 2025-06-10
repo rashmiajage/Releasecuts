@@ -1,0 +1,78 @@
+package com.example.jenkinsdemo.service;
+
+import com.cdancy.jenkins.rest.JenkinsClient;
+import com.cdancy.jenkins.rest.domain.job.BuildInfo;
+import com.cdancy.jenkins.rest.domain.queue.QueueItem;
+import com.cdancy.jenkins.rest.domain.queue.QueueItem.Value;
+import com.cdancy.jenkins.rest.domain.common.RequestStatus;
+import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class JenkinsService {
+
+    private final String jenkinsUrl = "http://localhost:8080";
+    private final String username = "admin";
+    private final String apiToken = "your-api-token";
+
+    public String triggerBuildAndMonitor(String jobName, Map<String, String> params) {
+        JenkinsClient client = JenkinsClient.builder()
+                .endPoint(jenkinsUrl)
+                .credentials(username + ":" + apiToken)
+                .build();
+
+        // Trigger parameterized build
+        RequestStatus status = client.jobApi().buildWithParameters(jobName, null, params);
+        if (!status.value()) {
+            return "❌ Failed to queue build for job: " + jobName;
+        }
+
+        System.out.println("✅ Build queued successfully.");
+
+        // Get queue item and wait for build number to be assigned
+        QueueItem queueItem;
+        int retry = 0;
+        int maxRetries = 20;
+        Value executable = null;
+
+        do {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException ignored) {}
+
+            queueItem = client.queueApi().queueItem(status.errors().get(0).context());
+            executable = queueItem.executable();
+            retry++;
+        } while (executable == null && retry < maxRetries);
+
+        if (executable == null) {
+            return "⚠️ Build was queued but did not start in time.";
+        }
+
+        int buildNumber = executable.number();
+        System.out.println("🚀 Build started: #" + buildNumber);
+
+        // Wait for build to complete
+        BuildInfo buildInfo;
+        do {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException ignored) {}
+
+            buildInfo = client.jobApi().buildInfo(jobName, buildNumber);
+        } while (buildInfo.building());
+
+        return String.format("""
+                ✅ Build Complete!
+                Build Number: %d
+                Status      : %s
+                URL         : %s
+                """,
+                buildNumber,
+                buildInfo.result(),
+                buildInfo.url()
+        );
+    }
+}
