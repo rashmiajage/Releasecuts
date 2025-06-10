@@ -1,0 +1,49 @@
+package com.example.jenkinsdemo.service;
+
+import com.offbytwo.jenkins.JenkinsServer;
+import com.offbytwo.jenkins.model.Build;
+import com.offbytwo.jenkins.model.BuildWithDetails;
+import com.offbytwo.jenkins.model.JobWithDetails;
+import org.springframework.stereotype.Service;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class JenkinsService {
+
+    private final String jenkinsUrl = "http://localhost:8080";
+    private final String username = "admin";
+    private final String apiToken = "your-api-token";
+
+    public String triggerAndMonitorBuild(String jobName, Map<String, String> parameters) throws Exception {
+        JenkinsServer jenkins = new JenkinsServer(new URI(jenkinsUrl), username, apiToken);
+
+        JobWithDetails job = jenkins.getJob(jobName);
+        if (job == null) return "Job not found: " + jobName;
+
+        int buildNumber = job.getNextBuildNumber();
+        job.build(parameters, true);
+        System.out.println("Triggered build #" + buildNumber);
+
+        // Wait for Jenkins to create the build
+        Build build = null;
+        while (build == null) {
+            Thread.sleep(3000);
+            build = job.getBuildByNumber(buildNumber);
+        }
+
+        BuildWithDetails buildDetails;
+        do {
+            Thread.sleep(5000);
+            buildDetails = build.details();
+            System.out.println("Building... " + buildDetails.isBuilding());
+        } while (buildDetails.isBuilding());
+
+        return String.format("✅ Build #%d completed!\nStatus: %s\nURL: %s",
+                buildDetails.getNumber(),
+                buildDetails.getResult(),
+                buildDetails.getUrl());
+    }
+}
