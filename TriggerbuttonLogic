@@ -1,0 +1,100 @@
+import React, { Component } from "react";
+import axios from "axios";
+
+class AppStatusCard extends Component {
+  state = {
+    jobUrl: null,
+    triggering: false,
+  };
+
+  getProgressColor(progress) {
+    if (progress === 100) return "green";
+    if (progress >= 70) return "blue";
+    if (progress > 0) return "red";
+    return "gray";
+  }
+
+  triggerJenkinsJob = async () => {
+    this.setState({ triggering: true });
+
+    try {
+      const response = await axios.post("http://localhost:5000/trigger-job", {
+        job_name: this.props.app.name, // assuming job name is same as app name
+        parameters: {
+          version: this.props.app.version,
+        },
+      });
+
+      this.setState({ jobUrl: response.data.job_url, triggering: false });
+    } catch (error) {
+      console.error("Error triggering job:", error);
+      this.setState({ jobUrl: "Error triggering job", triggering: false });
+    }
+  };
+
+  render() {
+    const { app } = this.props;
+    const progressColor = this.getProgressColor(app.progress);
+    const statusClass = `status ${app.status.toLowerCase().replace(" ", "-")}`;
+
+    return (
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <strong>{app.name}</strong>{" "}
+            <span className="version">({app.version})</span>
+          </div>
+          <div className={statusClass}>{app.status}</div>
+        </div>
+
+        <div className="card-body">
+          <div className="progress-circle">
+            <svg viewBox="0 0 36 36">
+              <path
+                className="bg"
+                d="M18 2.0845
+                   a 15.9155 15.9155 0 0 1 0 31.831
+                   a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="#eee"
+                strokeWidth="2"
+              />
+              <path
+                className="progress"
+                d="M18 2.0845
+                   a 15.9155 15.9155 0 0 1 0 31.831"
+                fill="none"
+                strokeLinecap="round"
+                strokeWidth="2"
+                stroke={progressColor}
+                strokeDasharray={`${app.progress}, 100`}
+              />
+            </svg>
+            <span className="progress-text">{app.progress}%</span>
+          </div>
+          <div className="card-details">
+            <p>Updated: {app.updatedTime}</p>
+            <div className="links">
+              {app.status === "Failed" && <a href="#">View Error Log</a>}
+              {app.status === "Completed" && <a href="#">View Release Log</a>}
+              {app.status === "In Progress" && <a href="#">View Progress</a>}
+              <a href="#">Jenkins Job</a>
+            </div>
+
+            <button onClick={this.triggerJenkinsJob} disabled={this.state.triggering}>
+              {this.state.triggering ? "Triggering..." : "Trigger Jenkins Build"}
+            </button>
+
+            {this.state.jobUrl && (
+              <div className="job-url">
+                <a href={this.state.jobUrl} target="_blank" rel="noopener noreferrer">
+                  View Job URL
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
