@@ -1,0 +1,44 @@
+import com.splunk.*;
+
+import java.io.InputStream;
+import java.util.Map;
+
+public class SplunkCountCheck {
+    public static void main(String[] args) throws Exception {
+        // Splunk connection setup
+        ServiceArgs loginArgs = new ServiceArgs();
+        loginArgs.setUsername("admin");
+        loginArgs.setPassword("your_password");
+        loginArgs.setHost("localhost");
+        loginArgs.setPort(8089);  // Splunk management port
+
+        Service service = Service.connect(loginArgs);
+
+        // Search query that returns only the count
+        String searchQuery = "search index=your_index error | stats count";
+
+        // Run the search
+        JobArgs jobArgs = new JobArgs();
+        jobArgs.setExecutionMode(JobArgs.ExecutionMode.BLOCKING);
+
+        Job job = service.getJobs().create(searchQuery, jobArgs);
+
+        // Read the result
+        InputStream resultsStream = job.getResults();
+        ResultsReaderXml resultsReader = new ResultsReaderXml(resultsStream);
+
+        Map<String, String> event = resultsReader.getNextEvent();
+        resultsReader.close();
+
+        if (event != null && event.containsKey("count")) {
+            int count = Integer.parseInt(event.get("count"));
+            if (count > 1) {
+                System.out.println("Success: More than 1 result found.");
+            } else {
+                System.out.println("Failure: 1 or no results found.");
+            }
+        } else {
+            System.out.println("No count field returned.");
+        }
+    }
+}
