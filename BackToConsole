@@ -1,3 +1,9 @@
+<div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
+  <button onClick={this.handleScan} className="btn btn-primary">Get Scan Results</button>
+  <button onClick={this.handleReset} className="btn btn-secondary">Reset</button>
+  <button onClick={this.handleBack} className="btn btn-info">← Back to Console</button>
+</div>
+
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
 
