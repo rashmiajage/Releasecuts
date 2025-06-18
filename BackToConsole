@@ -1,0 +1,19 @@
+import React from "react";
+import { useHistory } from "react-router-dom";
+
+const SecurityScans = () => {
+  const history = useHistory();
+
+  return (
+    <div style={{ padding: "24px" }}>
+      <button onClick={() => history.push("/platform-console")}>
+        ← Back to Console
+      </button>
+
+      <h2>Security Scans</h2>
+      <p>This page shows details about security scans...</p>
+    </div>
+  );
+};
+
+export default SecurityScans;
