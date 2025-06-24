@@ -1,0 +1,100 @@
+.release-wrapper {
+  padding: 20px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+h2 {
+  margin-bottom: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  border: 1px solid #e2e2e2;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.app-name {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.version {
+  font-size: 0.9rem;
+  color: #555;
+  margin-left: 4px;
+}
+
+.progress-ring {
+  margin: 10px 0;
+}
+
+.circle {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 1rem;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 6px solid #eee;
+}
+
+.circle.completed {
+  border-color: green;
+  color: green;
+}
+
+.circle.inprogress {
+  border-color: blue;
+  color: blue;
+}
+
+.circle.pending {
+  border-color: gray;
+  color: gray;
+}
+
+.circle.failed {
+  border-color: red;
+  color: red;
+}
+
+.details {
+  margin: 10px 0;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.links a {
+  color: #0366d6;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
