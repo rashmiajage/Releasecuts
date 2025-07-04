@@ -13,6 +13,32 @@ class JenkinsCard extends Component {
     this.intervalId = null;
   }
 
+  componentDidMount() {
+    this.fetchLatestBuildAndStartPolling();
+  }
+
+  componentWillUnmount() {
+    if (this.intervalId) clearInterval(this.intervalId);
+  }
+
+  fetchLatestBuildAndStartPolling = async () => {
+    const { jobName } = this.props;
+    try {
+      const res = await fetch(`http://localhost:5000/jenkins/latest?jobName=${jobName}`);
+      const data = await res.json();
+
+      if (data.buildNumber) {
+        this.setState({
+          buildUrl: `http://your-jenkins-url/job/${jobName}/${data.buildNumber}/`,
+          isPolling: true,
+        });
+        this.pollStatus(jobName, data.buildNumber);
+      }
+    } catch (err) {
+      console.error("Failed to fetch latest build", err);
+    }
+  };
+
   triggerBuild = async () => {
     const { jobName } = this.props;
     this.setState({ status: 'Triggering...', progress: 0 });
@@ -25,26 +51,21 @@ class JenkinsCard extends Component {
       });
 
       const data = await res.json();
-
       if (data.error) throw new Error(data.error);
 
       this.setState({
         buildUrl: data.buildUrl,
         status: 'Running',
-        isPolling: true,
+        // Don't start polling here
       });
-
-      this.pollStatus(jobName, data.buildNumber);
     } catch (err) {
       console.error(err);
-      this.setState({ status: 'Error', isPolling: false });
+      this.setState({ status: 'Error' });
     }
   };
 
   pollStatus = (jobName, buildNumber) => {
-    if (this.state.isPolling) return;
-
-    this.setState({ isPolling: true });
+    if (this.intervalId) clearInterval(this.intervalId);
 
     this.intervalId = setInterval(async () => {
       try {
@@ -64,16 +85,12 @@ class JenkinsCard extends Component {
           this.setState({ isPolling: false });
         }
       } catch (err) {
-        console.error('Polling failed', err);
+        console.error("Polling failed", err);
         clearInterval(this.intervalId);
         this.setState({ isPolling: false });
       }
     }, 5000);
   };
-
-  componentWillUnmount() {
-    if (this.intervalId) clearInterval(this.intervalId);
-  }
 
   render() {
     const { jobName } = this.props;
@@ -87,19 +104,13 @@ class JenkinsCard extends Component {
 
         {buildUrl && (
           <p>
-            Build URL:{' '}
-            <a href={buildUrl} target="_blank" rel="noopener noreferrer">
-              View
-            </a>
+            Build URL: <a href={buildUrl} target="_blank" rel="noopener noreferrer">View</a>
           </p>
         )}
 
         {consoleUrl && (
           <p>
-            Logs:{' '}
-            <a href={consoleUrl} target="_blank" rel="noopener noreferrer">
-              View Console
-            </a>
+            Logs: <a href={consoleUrl} target="_blank" rel="noopener noreferrer">View Console</a>
           </p>
         )}
 
