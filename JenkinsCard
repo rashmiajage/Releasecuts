@@ -1,14 +1,22 @@
-import React, { useState } from 'react';
+import React, { Component } from 'react';
 
-const JenkinsCard = ({ jobName }) => {
-  const [status, setStatus] = useState("Pending");
-  const [progress, setProgress] = useState(0);
-  const [buildUrl, setBuildUrl] = useState("");
-  const [consoleUrl, setConsoleUrl] = useState("");
-  const [isPolling, setIsPolling] = useState(false);
+class JenkinsCard extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      status: 'Pending',
+      progress: 0,
+      buildUrl: '',
+      consoleUrl: '',
+      isPolling: false,
+    };
+    this.intervalId = null;
+  }
 
-  const triggerBuild = async () => {
-    setStatus("Triggering...");
+  triggerBuild = async () => {
+    const { jobName } = this.props;
+    this.setState({ status: 'Triggering...', progress: 0 });
+
     try {
       const res = await fetch('http://localhost:5000/jenkins/build', {
         method: 'POST',
@@ -20,61 +28,85 @@ const JenkinsCard = ({ jobName }) => {
 
       if (data.error) throw new Error(data.error);
 
-      setBuildUrl(data.buildUrl);
-      setStatus("Running");
-      setProgress(0);
+      this.setState({
+        buildUrl: data.buildUrl,
+        status: 'Running',
+        isPolling: true,
+      });
 
-      pollStatus(jobName, data.buildNumber);
+      this.pollStatus(jobName, data.buildNumber);
     } catch (err) {
-      setStatus("Error");
       console.error(err);
+      this.setState({ status: 'Error', isPolling: false });
     }
   };
 
-  const pollStatus = (jobName, buildNumber) => {
-    if (isPolling) return;
+  pollStatus = (jobName, buildNumber) => {
+    if (this.state.isPolling) return;
 
-    setIsPolling(true);
+    this.setState({ isPolling: true });
 
-    const intervalId = setInterval(async () => {
+    this.intervalId = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:5000/jenkins/status?jobName=${jobName}&buildNumber=${buildNumber}`);
+        const res = await fetch(
+          `http://localhost:5000/jenkins/status?jobName=${jobName}&buildNumber=${buildNumber}`
+        );
         const data = await res.json();
 
-        setStatus(data.status);
-        setProgress(data.progress);
-        setConsoleUrl(data.consoleUrl);
+        this.setState({
+          status: data.status,
+          progress: data.progress,
+          consoleUrl: data.consoleUrl,
+        });
 
-        if (data.status === "SUCCESS" || data.status === "FAILURE") {
-          clearInterval(intervalId);
-          setIsPolling(false);
+        if (data.status === 'SUCCESS' || data.status === 'FAILURE') {
+          clearInterval(this.intervalId);
+          this.setState({ isPolling: false });
         }
       } catch (err) {
-        console.error("Polling failed", err);
-        clearInterval(intervalId);
-        setIsPolling(false);
+        console.error('Polling failed', err);
+        clearInterval(this.intervalId);
+        this.setState({ isPolling: false });
       }
     }, 5000);
   };
 
-  return (
-    <div className="card">
-      <h3>{jobName}</h3>
-      <p>Status: <strong>{status}</strong></p>
-      <p>Progress: {progress}%</p>
-      {buildUrl && (
-        <p>
-          Build URL: <a href={buildUrl} target="_blank" rel="noopener noreferrer">View</a>
-        </p>
-      )}
-      {consoleUrl && (
-        <p>
-          Logs: <a href={consoleUrl} target="_blank" rel="noopener noreferrer">View Console</a>
-        </p>
-      )}
-      <button onClick={triggerBuild}>Trigger Build</button>
-    </div>
-  );
-};
+  componentWillUnmount() {
+    if (this.intervalId) clearInterval(this.intervalId);
+  }
+
+  render() {
+    const { jobName } = this.props;
+    const { status, progress, buildUrl, consoleUrl } = this.state;
+
+    return (
+      <div className="card">
+        <h3>{jobName}</h3>
+        <p>Status: <strong>{status}</strong></p>
+        <p>Progress: {progress}%</p>
+
+        {buildUrl && (
+          <p>
+            Build URL:{' '}
+            <a href={buildUrl} target="_blank" rel="noopener noreferrer">
+              View
+            </a>
+          </p>
+        )}
+
+        {consoleUrl && (
+          <p>
+            Logs:{' '}
+            <a href={consoleUrl} target="_blank" rel="noopener noreferrer">
+              View Console
+            </a>
+          </p>
+        )}
+
+        <button onClick={this.triggerBuild}>Trigger Build</button>
+      </div>
+    );
+  }
+}
 
 export default JenkinsCard;
