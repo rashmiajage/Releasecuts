@@ -1,0 +1,104 @@
+// AppCard.jsx
+import React from "react";
+import axios from "axios";
+
+class AppCard extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      status: props.app.status,
+      progress: props.app.progress,
+      buildUrl: props.app.buildUrl || null,
+      polling: false,
+    };
+    this.intervalId = null;
+  }
+
+  triggerBuild = async () => {
+    try {
+      const response = await axios.post(`/api/trigger/${this.props.app.name}`);
+      this.setState({
+        buildUrl: response.data.buildUrl,
+        status: "In Progress",
+        polling: true,
+      });
+    } catch (error) {
+      console.error("Error triggering build:", error);
+    }
+  };
+
+  pollStatus = async () => {
+    try {
+      const response = await axios.get(`/api/status/${this.props.app.name}`);
+      const { status, progress } = response.data;
+      this.setState({ status, progress });
+
+      if (["Completed", "Failed"].includes(status)) {
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+        this.setState({ polling: false });
+      }
+    } catch (error) {
+      console.error("Error polling status:", error);
+    }
+  };
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.polling && !this.intervalId) {
+      this.intervalId = setInterval(this.pollStatus, 5000);
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
+
+  render() {
+    const { name } = this.props.app;
+    const { status, progress, buildUrl } = this.state;
+
+    const colorMap = {
+      Completed: "green",
+      "In Progress": "blue",
+      Failed: "red",
+      Pending: "gray",
+    };
+
+    return (
+      <div style={{
+        border: "1px solid #ccc",
+        borderLeft: `6px solid ${colorMap[status] || "black"}`,
+        padding: "1rem",
+        width: "220px",
+        borderRadius: "10px"
+      }}>
+        <h3>{name}</h3>
+        <p>Status: <strong>{status}</strong></p>
+        <p>Progress: <strong>{progress}%</strong></p>
+        {buildUrl && (
+          <p>
+            🔗 <a href={buildUrl} target="_blank" rel="noreferrer">View Build</a>
+          </p>
+        )}
+        <button
+          onClick={this.triggerBuild}
+          disabled={status === "In Progress"}
+          style={{
+            backgroundColor: "#007bff",
+            color: "white",
+            border: "none",
+            padding: "0.5rem 1rem",
+            borderRadius: "5px",
+            cursor: status === "In Progress" ? "not-allowed" : "pointer"
+          }}
+        >
+          Trigger Build
+        </button>
+      </div>
+    );
+  }
+}
+
+export default AppCard;
