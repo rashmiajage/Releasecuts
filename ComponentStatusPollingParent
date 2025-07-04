@@ -1,0 +1,24 @@
+// AppDashboard.jsx
+import React from "react";
+import AppCard from "./AppCard";
+
+const apps = [
+  { name: "App-A", status: "Completed", progress: 100 },
+  { name: "App-B", status: "In Progress", progress: 70 },
+  { name: "App-C", status: "Pending", progress: 0 },
+  { name: "App-D", status: "Failed", progress: 45 },
+];
+
+class AppDashboard extends React.Component {
+  render() {
+    return (
+      <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+        {apps.map((app) => (
+          <AppCard key={app.name} app={app} />
+        ))}
+      </div>
+    );
+  }
+}
+
+export default AppDashboard;
