@@ -1,0 +1,47 @@
+from langchain.chat_models import ChatOpenAI
+from tools.splunk_query_tool import SplunkQueryTool
+from langgraph.graph import StateGraph, END
+from dotenv import load_dotenv
+
+load_dotenv()
+
+splunk_tool = SplunkQueryTool()
+
+def step1_failed_logins(state):
+    query = 'index=auth sourcetype=linux_secure "Failed password"'
+    result = splunk_tool.run({"query": query})
+    state["step1_result"] = result
+    return state
+
+def step2_top_users(state):
+    query = '''index=auth sourcetype=linux_secure "Failed password"
+               | stats count by user 
+               | sort -count 
+               | head 5'''
+    result = splunk_tool.run({"query": query})
+    state["step2_result"] = result
+    return state
+
+def step3_user_ips(state):
+    # Pretend we extracted top users from step2
+    users = ["root", "admin", "test"]  # Can be parsed from step2_result if needed
+    user_filter = '", "'.join(users)
+    query = f'''index=auth sourcetype=linux_secure "Failed password"
+                | search user IN ("{user_filter}")
+                | stats dc(src) as unique_ips by user'''
+    result = splunk_tool.run({"query": query})
+    state["step3_result"] = result
+    return state
+
+# Build graph
+graph = StateGraph()
+graph.add_node("failed_logins", step1_failed_logins)
+graph.add_node("top_users", step2_top_users)
+graph.add_node("user_ips", step3_user_ips)
+
+graph.set_entry_point("failed_logins")
+graph.add_edge("failed_logins", "top_users")
+graph.add_edge("top_users", "user_ips")
+graph.set_finish_point("user_ips")
+
+chain = graph.compile()
