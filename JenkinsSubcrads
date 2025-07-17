@@ -1,0 +1,187 @@
+import React, { Component } from 'react';
+import axios from 'axios';
+
+class JenkinsCard extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      status: null,
+      progress: null,
+      buildUrl: '',
+      consoleUrl: '',
+      isPolling: false,
+      loadingBuildInfo: true,
+      loadingLogs: true
+    };
+
+    this.pollingInterval = null;
+  }
+
+  componentDidMount() {
+    this.startPolling();
+  }
+
+  componentWillUnmount() {
+    if (this.pollingInterval) clearInterval(this.pollingInterval);
+  }
+
+  startPolling = async () => {
+    const { jobName } = this.props;
+
+    try {
+      const latestRes = await axios.get(`http://localhost:5000/jenkins/latest?jobName=${jobName}`);
+      const buildNumber = latestRes.data.buildNumber;
+
+      if (!buildNumber) {
+        this.setState({ loadingBuildInfo: false, loadingLogs: false });
+        return;
+      }
+
+      this.setState({
+        buildUrl: `http://your-jenkins-url/job/${jobName}/${buildNumber}/`,
+        isPolling: true
+      });
+
+      this.pollingInterval = setInterval(() => {
+        this.fetchBuildStatus(jobName, buildNumber);
+      }, 5000);
+
+      // Fetch once immediately
+      this.fetchBuildStatus(jobName, buildNumber);
+
+    } catch (err) {
+      console.error("Error fetching latest build:", err);
+      this.setState({ loadingBuildInfo: false, loadingLogs: false });
+    }
+  };
+
+  fetchBuildStatus = async (jobName, buildNumber) => {
+    try {
+      const res = await axios.get(`http://localhost:5000/jenkins/status?jobName=${jobName}&buildNumber=${buildNumber}`);
+      const data = res.data;
+
+      this.setState({
+        status: data.status,
+        progress: data.progress,
+        consoleUrl: data.consoleUrl,
+        loadingBuildInfo: false,
+        loadingLogs: false
+      });
+
+      if (data.status === 'SUCCESS' || data.status === 'FAILURE') {
+        clearInterval(this.pollingInterval);
+        this.setState({ isPolling: false });
+      }
+
+    } catch (err) {
+      console.error("Polling error:", err);
+    }
+  };
+
+  triggerBuild = async () => {
+    const { jobName } = this.props;
+    this.setState({ status: 'Triggering...', progress: 0 });
+
+    try {
+      const res = await axios.post('http://localhost:5000/jenkins/build', {
+        jobName
+      });
+
+      const { buildUrl } = res.data;
+
+      this.setState({
+        buildUrl,
+        status: 'Running',
+      });
+
+    } catch (err) {
+      console.error("Trigger failed:", err);
+      this.setState({ status: 'Error' });
+    }
+  };
+
+  render() {
+    const { jobName } = this.props;
+    const {
+      status,
+      progress,
+      buildUrl,
+      consoleUrl,
+      loadingBuildInfo,
+      loadingLogs
+    } = this.state;
+
+    return (
+      <div style={styles.parentCard}>
+        <h2 style={styles.jobName}>{jobName}</h2>
+
+        <div style={styles.subCardContainer}>
+          {/* Subcard 1: Build Info */}
+          <div style={styles.subCard}>
+            <h4>Build Info</h4>
+            {loadingBuildInfo ? (
+              <p>Loading build info...</p>
+            ) : (
+              <>
+                <p>Status: <strong>{status}</strong></p>
+                <p>Progress: {progress}%</p>
+                {buildUrl && (
+                  <p>
+                    Build URL: <a href={buildUrl} target="_blank" rel="noopener noreferrer">View</a>
+                  </p>
+                )}
+              </>
+            )}
+            <button onClick={this.triggerBuild}>Trigger Build</button>
+          </div>
+
+          {/* Subcard 2: Logs */}
+          <div style={styles.subCard}>
+            <h4>Console Logs</h4>
+            {loadingLogs ? (
+              <p>Loading logs...</p>
+            ) : (
+              <>
+                {consoleUrl ? (
+                  <a href={consoleUrl} target="_blank" rel="noopener noreferrer">View Console</a>
+                ) : (
+                  <p>No logs available.</p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+const styles = {
+  parentCard: {
+    border: '2px solid #4A90E2',
+    borderRadius: '12px',
+    padding: '20px',
+    margin: '20px',
+    backgroundColor: '#f0f8ff',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+  },
+  jobName: {
+    fontSize: '20px',
+    marginBottom: '10px'
+  },
+  subCardContainer: {
+    display: 'flex',
+    gap: '20px',
+    marginTop: '15px',
+  },
+  subCard: {
+    flex: 1,
+    border: '1px solid #ccc',
+    borderRadius: '8px',
+    padding: '15px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.05)'
+  }
+};
+
+export default JenkinsCard;
