@@ -1,0 +1,16 @@
+High Operational Overhead Due to Manual Execution of Repetitive Browser-Based Tasks
+
+
+
+The Platform team currently spends a significant amount of time performing manual, repetitive browser-based activities across 25+ Fargo components. These include:
+
+Extracting vulnerability reports from security scanning portals like Checkmarx and Blackduck
+
+Performing manual data entry and triggering builds for release cutoffs
+
+Scraping content to retrieve build version information
+
+Checking and reporting environment availability and health status
+
+
+This manual execution is time-consuming, error-prone, and non-scalable, leading to delays, inefficiencies, and reduced team productivity.
