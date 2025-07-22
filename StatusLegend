@@ -1,0 +1,17 @@
+{/* Status Legend */}
+<div style={{
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: "20px",
+  marginTop: "30px",
+  fontWeight: "bold",
+  fontSize: "14px",
+  backgroundColor: "#f3f4f6",
+  padding: "10px",
+  borderRadius: "8px"
+}}>
+  <div>🟩 Success</div>
+  <div>🟨 In Progress</div>
+  <div>🟥 Failed</div>
+</div>
