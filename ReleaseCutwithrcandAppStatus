@@ -61,7 +61,6 @@ class ReleaseDashboard extends Component {
   };
 
   handleTriggerMI = () => {
-    // TODO: Call Jenkins API here
     alert("Trigger MI job for release " + this.state.releaseNumber);
   };
 
@@ -78,9 +77,26 @@ class ReleaseDashboard extends Component {
       fontWeight: "bold"
     };
 
+    const thStyle = {
+      padding: "10px",
+      borderBottom: "2px solid #ccc",
+      backgroundColor: "#e0e7ff",
+      textAlign: "left"
+    };
+
+    const tdStyle = {
+      padding: "10px",
+      borderBottom: "1px solid #ddd"
+    };
+
     return (
       <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-        {/* Input Row */}
+        {/* Title */}
+        <h2 style={{ color: "#dc2626", marginBottom: "10px" }}>
+          Release Hub - Cut, Trigger & Track with Ease
+        </h2>
+
+        {/* Release Number Input */}
         <div style={{ marginBottom: "20px" }}>
           <label style={{ marginRight: "10px", fontWeight: "bold" }}>
             Release Number:
@@ -122,27 +138,51 @@ class ReleaseDashboard extends Component {
 
         {/* Output Section */}
         <div>
+          {/* Table View for Release Cut Progress */}
           {view === "releaseCut" && (
             <div
               style={{
                 backgroundColor: "#fef3c7",
-                padding: "15px",
+                padding: "20px",
                 borderRadius: "10px"
               }}
             >
-              <h3 style={{ color: "#1e3a8a" }}>📦 Release cut Progress</h3>
-              {buildData.map((comp) => (
-                <div key={comp.component} style={{ marginBottom: "10px" }}>
-                  <strong style={{ color: "brown" }}>{comp.component}</strong>{" "}
-                  {this.getStatusIcon(comp.release.status)}{" "}
-                  <span style={{ color: "black", fontWeight: "bold" }}>
-                    {comp.releaseCutId}
-                  </span>
-                </div>
-              ))}
+              <h3 style={{ color: "#1e3a8a", marginBottom: "15px" }}>
+                📋 Release cut Progress
+              </h3>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Component</th>
+                    <th style={thStyle}>Status</th>
+                    <th style={thStyle}>MasterInvoker Link</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {buildData.map((comp) => (
+                    <tr key={comp.component}>
+                      <td style={tdStyle}>{comp.component}</td>
+                      <td style={tdStyle}>
+                        {this.getStatusIcon(comp.release.status)}
+                      </td>
+                      <td style={tdStyle}>
+                        <a
+                          href={comp.release.jenkinsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: "#1d4ed8", textDecoration: "underline" }}
+                        >
+                          {comp.releaseCutId}
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
+          {/* Card View for Application Status */}
           {view === "appStatus" && (
             <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
               {buildData.map((comp) => (
