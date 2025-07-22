@@ -1,1 +1,192 @@
+import React, { Component } from "react";
 
+class ReleaseDashboard extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      releaseNumber: "",
+      view: "", // 'releaseCut' or 'appStatus'
+      buildData: [
+        {
+          component: "cvams-orchestrator",
+          snapshot: {
+            status: "success",
+            jenkinsUrl: "http://jenkins/job/orchestrator-snapshot"
+          },
+          release: {
+            status: "in_progress",
+            jenkinsUrl: "http://jenkins/job/orchestrator-release"
+          },
+          releaseCutId: "CVAMS-MQHZ-18399"
+        },
+        {
+          component: "cvams-chat-data-service",
+          snapshot: {
+            status: "in_progress",
+            jenkinsUrl: "http://jenkins/job/chat-snapshot"
+          },
+          release: {
+            status: "failed",
+            jenkinsUrl: "http://jenkins/job/chat-release"
+          },
+          releaseCutId: "CVAMS-MQHZ-18400"
+        },
+        {
+          component: "wfcva-chat-service",
+          snapshot: {
+            status: "failed",
+            jenkinsUrl: "http://jenkins/job/wfcva-snapshot"
+          },
+          release: {
+            status: "failed",
+            jenkinsUrl: "http://jenkins/job/wfcva-release"
+          },
+          releaseCutId: "CVAMS-MQHZ-18401"
+        }
+      ]
+    };
+  }
+
+  getStatusIcon = (status) => {
+    switch (status) {
+      case "success":
+        return "🟩";
+      case "in_progress":
+        return "🟨";
+      case "failed":
+        return "🟥";
+      default:
+        return "⬜";
+    }
+  };
+
+  handleTriggerMI = () => {
+    // TODO: Call Jenkins API here
+    alert("Trigger MI job for release " + this.state.releaseNumber);
+  };
+
+  render() {
+    const { releaseNumber, view, buildData } = this.state;
+
+    const buttonStyle = {
+      padding: "10px 16px",
+      backgroundColor: "#2563eb",
+      color: "#fff",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+      fontWeight: "bold"
+    };
+
+    return (
+      <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
+        {/* Input Row */}
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ marginRight: "10px", fontWeight: "bold" }}>
+            Release Number:
+          </label>
+          <input
+            type="text"
+            value={releaseNumber}
+            onChange={(e) =>
+              this.setState({ releaseNumber: e.target.value })
+            }
+            placeholder="e.g., R25.08.00"
+            style={{
+              padding: "5px",
+              borderRadius: "5px",
+              border: "1px solid #ccc",
+              width: "200px"
+            }}
+          />
+        </div>
+
+        {/* Button Row */}
+        <div style={{ display: "flex", gap: "15px", marginBottom: "20px" }}>
+          <button onClick={this.handleTriggerMI} style={buttonStyle}>
+            Trigger MI
+          </button>
+          <button
+            onClick={() => this.setState({ view: "releaseCut" })}
+            style={buttonStyle}
+          >
+            Release cut Progress
+          </button>
+          <button
+            onClick={() => this.setState({ view: "appStatus" })}
+            style={buttonStyle}
+          >
+            Application Status
+          </button>
+        </div>
+
+        {/* Output Section */}
+        <div>
+          {view === "releaseCut" && (
+            <div
+              style={{
+                backgroundColor: "#fef3c7",
+                padding: "15px",
+                borderRadius: "10px"
+              }}
+            >
+              <h3 style={{ color: "#1e3a8a" }}>📦 Release cut Progress</h3>
+              {buildData.map((comp) => (
+                <div key={comp.component} style={{ marginBottom: "10px" }}>
+                  <strong style={{ color: "brown" }}>{comp.component}</strong>{" "}
+                  {this.getStatusIcon(comp.release.status)}{" "}
+                  <span style={{ color: "black", fontWeight: "bold" }}>
+                    {comp.releaseCutId}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {view === "appStatus" && (
+            <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+              {buildData.map((comp) => (
+                <div
+                  key={comp.component}
+                  style={{
+                    border: "2px solid orange",
+                    borderRadius: "10px",
+                    padding: "15px",
+                    width: "300px",
+                    backgroundColor: "#fff7ed"
+                  }}
+                >
+                  <h3>{comp.component}</h3>
+                  <p>
+                    Snapshot build progress:{" "}
+                    {this.getStatusIcon(comp.snapshot.status)}{" "}
+                    <a
+                      href={comp.snapshot.jenkinsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Jenkins-link
+                    </a>
+                  </p>
+                  <p>
+                    Release build progress:{" "}
+                    {this.getStatusIcon(comp.release.status)}{" "}
+                    <a
+                      href={comp.release.jenkinsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Jenkins-link
+                    </a>
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+}
+
+export default ReleaseDashboard;
