@@ -1,0 +1,43 @@
+import json
+
+# Assume these are your JSONs
+deals_json = [
+    {
+        "id": "001",
+        "description": "Summer Sale Item",
+        "category": "Clothing",
+        "original_price": 100,
+        "discounted_price": 70
+    }
+]
+
+user_preferences = {
+    "preferred_categories": ["Clothing", "Travel"],
+    "price_range": {"min": 50, "max": 150},
+    "minimum_discount_percentage": 20
+}
+
+# Convert to formatted strings
+deals_json_str = json.dumps(deals_json, indent=2)
+user_prefs_str = json.dumps(user_preferences, indent=2)
+
+# Combine in prompt
+prompt = f"""
+You are a deal analysis assistant. Please analyze the following JSON inputs:
+
+Deals JSON:
+{deals_json_str}
+
+User Preferences JSON:
+{user_prefs_str}
+
+Now, identify all matching deals based on:
+- Category match
+- Price range match
+- Minimum discount percentage
+
+Return the results in a table with:
+| Deal ID | Description | Original Price | Discounted Price | Percentage Discount |
+"""
+
+print(prompt)
