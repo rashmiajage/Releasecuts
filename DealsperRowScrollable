@@ -1,0 +1,85 @@
+import json
+import streamlit as st
+
+# Load deals from JSON
+def load_deals():
+    with open("deals_db.json", "r") as f:
+        return json.load(f)
+
+# Inject custom CSS for horizontal scrolling and card style
+def inject_styles():
+    st.markdown("""
+        <style>
+        .category-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .horizontal-scroll {
+            display: flex;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+        }
+        .deal-card {
+            flex: 0 0 auto;
+            background-color: #f9f9fb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-right: 10px;
+            width: 250px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+        }
+        .deal-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .deal-info {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+# Render deal cards for a single category
+def render_category_row(category_name, deals):
+    st.markdown(f'<div class="category-title">📂 {category_name}</div>', unsafe_allow_html=True)
+    
+    # Horizontal scrollable container
+    scrollable_row = '<div class="horizontal-scroll">'
+    
+    for deal in deals:
+        card_html = f"""
+        <div class="deal-card">
+            <div class="deal-title">📌 {deal["deal_description"]}</div>
+            <div class="deal-info">🏷️ Code: <b>{deal["deal_code"]}</b></div>
+            <div class="deal-info">💰 Save: {deal["deal_saving_amount"]}</div>
+            <div class="deal-info">📍 {deal["deal_location"]} ({deal["deal_pincode"]})</div>
+            <div class="deal-info">⏳ Expiry: {deal["deal_expiry"]}</div>
+        </div>
+        """
+        scrollable_row += card_html
+    
+    scrollable_row += "</div>"
+    st.markdown(scrollable_row, unsafe_allow_html=True)
+
+# --- Main App ---
+st.set_page_config(layout="wide")
+inject_styles()
+
+st.markdown("### 🔍 Browse Deals by Category")
+selected_categories = st.multiselect(
+    "Choose categories:",
+    ["Travel", "Shopping", "Entertainment", "Events"]
+)
+
+if selected_categories:
+    deals_data = load_deals()
+    for category in selected_categories:
+        for entry in deals_data:
+            if entry["category"].lower() == category.lower():
+                render_category_row(category, entry["deals"])
+else:
+    st.info("Please select one or more categories.")
