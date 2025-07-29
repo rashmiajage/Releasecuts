@@ -1,0 +1,58 @@
+import json
+import streamlit as st
+
+# Load deals data from JSON file
+def load_deals():
+    with open("deals_db.json", "r") as file:
+        return json.load(file)
+
+# Card-style CSS
+def inject_card_style():
+    st.markdown("""
+        <style>
+        .deal-card {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        .deal-title {
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+        .deal-info {
+            font-size: 14px;
+            color: #333;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+# Inside chatbot_page()
+st.markdown("### 🗂️ Top deals by category")
+selected_categories = st.multiselect(
+    "Select one or more categories:",
+    ["Travel", "Shopping", "Entertainment", "Events"]
+)
+
+if selected_categories:
+    st.success(f"Showing top deals for: {', '.join(selected_categories)}")
+
+    # Load and display deals
+    deals_data = load_deals()
+    inject_card_style()
+
+    for category_entry in deals_data:
+        category_name = category_entry["category"]
+        if category_name.capitalize() in selected_categories:
+            for deal in category_entry["deals"]:
+                st.markdown(f"""
+                    <div class="deal-card">
+                        <div class="deal-title">📌 {deal["deal_description"]}</div>
+                        <div class="deal-info">🏷️ Code: <b>{deal["deal_code"]}</b></div>
+                        <div class="deal-info">💰 Savings: {deal["deal_saving_amount"]}</div>
+                        <div class="deal-info">📍 Location: {deal["deal_location"]} ({deal["deal_pincode"]})</div>
+                        <div class="deal-info">⏳ Expires on: {deal["deal_expiry"]}</div>
+                    </div>
+                """, unsafe_allow_html=True)
