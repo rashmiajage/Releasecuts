@@ -1,0 +1,96 @@
+import json
+import streamlit as st
+
+# Load deals from JSON file
+def load_deals():
+    with open("deals_db.json", "r") as f:
+        return json.load(f)
+
+# Custom CSS for card styling
+def inject_card_style():
+    st.markdown("""
+        <style>
+        .deal-card {
+            background-color: #f8f8ff;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            margin-bottom: 15px;
+            height: 200px;
+        }
+        .deal-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .deal-info {
+            font-size: 14px;
+            color: #333;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+# Flatten deals across selected categories
+def get_filtered_deals(deals_data, selected_categories):
+    all_deals = []
+    for category_block in deals_data:
+        if category_block["category"].capitalize() in selected_categories:
+            all_deals.extend(category_block["deals"])
+    return all_deals
+
+# Streamlit page
+st.markdown("### 🗂️ Top deals by category")
+selected_categories = st.multiselect(
+    "Select one or more categories:",
+    ["Travel", "Shopping", "Entertainment", "Events"]
+)
+
+if selected_categories:
+    st.success(f"Showing top deals for: {', '.join(selected_categories)}")
+    inject_card_style()
+
+    deals_data = load_deals()
+    all_deals = get_filtered_deals(deals_data, selected_categories)
+
+    # Pagination setup
+    deals_per_page = 6
+    page_number = st.session_state.get("page_number", 0)
+    total_pages = (len(all_deals) - 1) // deals_per_page + 1
+
+    # Paginated deals
+    start_idx = page_number * deals_per_page
+    end_idx = start_idx + deals_per_page
+    current_deals = all_deals[start_idx:end_idx]
+
+    # Display deals in rows of 3
+    for i in range(0, len(current_deals), 3):
+        cols = st.columns(3)
+        for j in range(3):
+            if i + j < len(current_deals):
+                deal = current_deals[i + j]
+                with cols[j]:
+                    st.markdown(f"""
+                        <div class="deal-card">
+                            <div class="deal-title">📌 {deal["deal_description"]}</div>
+                            <div class="deal-info">🏷️ Code: <b>{deal["deal_code"]}</b></div>
+                            <div class="deal-info">💰 Save: {deal["deal_saving_amount"]}</div>
+                            <div class="deal-info">📍 {deal["deal_location"]} ({deal["deal_pincode"]})</div>
+                            <div class="deal-info">⏳ Expiry: {deal["deal_expiry"]}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+    # Pagination controls
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col1:
+        if page_number > 0:
+            if st.button("⬅️ Previous"):
+                st.session_state.page_number = page_number - 1
+                st.experimental_rerun()
+    with col3:
+        if page_number < total_pages - 1:
+            if st.button("Next ➡️"):
+                st.session_state.page_number = page_number + 1
+                st.experimental_rerun()
+
+else:
+    st.info("Please select one or more categories to see deals.")
