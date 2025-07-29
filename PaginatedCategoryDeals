@@ -1,0 +1,160 @@
+import streamlit as st
+import json
+
+# ---------- Sample Data (Replace with your loader) ----------
+def load_deals():
+    return [
+        {
+            "category": "Travel",
+            "deals": [
+                {
+                    "deal_description": "Short vacation package to Florida beaches",
+                    "deal_code": "W3WE9R6J",
+                    "deal_saving_amount": "$82",
+                    "deal_location": "Massachusetts",
+                    "deal_pincode": "02108",
+                    "deal_expiry": "2025-08-18"
+                },
+                {
+                    "deal_description": "Tourism deal for Seattle",
+                    "deal_code": "b47WNSPTM",
+                    "deal_saving_amount": "$158",
+                    "deal_location": "Washington",
+                    "deal_pincode": "98101",
+                    "deal_expiry": "2025-08-20"
+                },
+                {
+                    "deal_description": "Weekend getaway in Denver",
+                    "deal_code": "DEN123XYZ",
+                    "deal_saving_amount": "$120",
+                    "deal_location": "Colorado",
+                    "deal_pincode": "80202",
+                    "deal_expiry": "2025-09-10"
+                },
+                {
+                    "deal_description": "Beach resort in Miami",
+                    "deal_code": "MIA456ABC",
+                    "deal_saving_amount": "$95",
+                    "deal_location": "Florida",
+                    "deal_pincode": "33101",
+                    "deal_expiry": "2025-09-12"
+                }
+            ]
+        },
+        {
+            "category": "Entertainment",
+            "deals": [
+                {
+                    "deal_description": "Concert early bird discount",
+                    "deal_code": "5GWXG97Z",
+                    "deal_saving_amount": "$168",
+                    "deal_location": "Illinois",
+                    "deal_pincode": "60601",
+                    "deal_expiry": "2025-08-24"
+                },
+                {
+                    "deal_description": "Restaurant dinner deal",
+                    "deal_code": "b2CNPR1QC",
+                    "deal_saving_amount": "$179",
+                    "deal_location": "Georgia",
+                    "deal_pincode": "30301",
+                    "deal_expiry": "2025-09-01"
+                },
+                {
+                    "deal_description": "Family Day Out",
+                    "deal_code": "bGJ8BBSZ7",
+                    "deal_saving_amount": "$76",
+                    "deal_location": "Texas",
+                    "deal_pincode": "73301",
+                    "deal_expiry": "2025-09-03"
+                }
+            ]
+        }
+    ]
+
+# ---------- Styling ----------
+def inject_styles():
+    st.markdown("""
+        <style>
+        .deal-card {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 12px;
+            margin: 10px;
+            background-color: #f9f9f9;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+        }
+        .deal-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .deal-info {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .category-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 25px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+# ---------- Pagination Renderer ----------
+def render_paginated_category(category_name, deals, page_size=3):
+    key = f"{category_name}_page"
+    if key not in st.session_state:
+        st.session_state[key] = 0
+
+    current_page = st.session_state[key]
+    total_pages = (len(deals) - 1) // page_size + 1
+    start = current_page * page_size
+    end = start + page_size
+    visible_deals = deals[start:end]
+
+    st.markdown(f'<div class="category-title">📂 {category_name}</div>', unsafe_allow_html=True)
+
+    cols = st.columns(3)
+    for i, deal in enumerate(visible_deals):
+        with cols[i % 3]:
+            st.markdown(f"""
+                <div class="deal-card">
+                    <div class="deal-title">📌 {deal["deal_description"]}</div>
+                    <div class="deal-info">🏷️ Code: <b>{deal["deal_code"]}</b></div>
+                    <div class="deal-info">💰 Save: {deal["deal_saving_amount"]}</div>
+                    <div class="deal-info">📍 {deal["deal_location"]} ({deal["deal_pincode"]})</div>
+                    <div class="deal-info">⏳ Expiry: {deal["deal_expiry"]}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 1, 2])
+    with col1:
+        if st.button("⬅️ Previous", key=f"{category_name}_prev") and current_page > 0:
+            st.session_state[key] -= 1
+    with col2:
+        if st.button("Next ➡️", key=f"{category_name}_next") and current_page < total_pages - 1:
+            st.session_state[key] += 1
+    with col3:
+        st.write(f"Page {current_page + 1} of {total_pages}")
+
+# ---------- Main App ----------
+def main():
+    st.set_page_config(page_title="Top Deals by Category", layout="wide")
+    inject_styles()
+
+    st.markdown("### 🏷️ Top deals by category")
+    selected_categories = st.multiselect(
+        "Select one or more categories:",
+        ["Travel", "Shopping", "Entertainment", "Events"]
+    )
+
+    if selected_categories:
+        deals_data = load_deals()
+        for category in selected_categories:
+            for entry in deals_data:
+                if entry["category"].lower() == category.lower():
+                    render_paginated_category(category, entry["deals"])
+
+if __name__ == "__main__":
+    main()
