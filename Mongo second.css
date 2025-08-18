@@ -1,0 +1,168 @@
+/* Container */
+.release-container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+/* Title */
+.title {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+/* Header (legend + refresh info) */
+.header-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+/* Legend */
+.legend {
+  display: flex;
+  gap: 20px;
+}
+
+.legend-item {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Status dots */
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.green-dot {
+  background-color: green;
+}
+
+.red-dot {
+  background-color: red;
+}
+
+.yellow-dot {
+  background-color: orange;
+}
+
+.gray-dot {
+  background-color: gray;
+}
+
+/* Refresh section */
+.refresh-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.last-updated {
+  font-size: 13px;
+  color: #555;
+}
+
+.refresh-button {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 6px;
+  background: #1976d2;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s ease;
+}
+
+.refresh-button:hover {
+  background: #125aa0;
+}
+
+.refresh-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* Card */
+.card {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+/* Card header */
+.card-header {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+/* Card body rows */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Progress circle positioning */
+.progress-container {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 55px;
+  height: 55px;
+}
+
+/* Overall status bar (thick left border) */
+.overall-success {
+  border-left: 10px solid green;
+}
+
+.overall-failed {
+  border-left: 10px solid red;
+}
+
+.overall-inprogress {
+  border-left: 10px solid orange;
+}
+
+.overall-unknown {
+  border-left: 10px solid gray;
+}
+
+/* Loading text */
+.loading {
+  text-align: center;
+  font-size: 18px;
+  color: #333;
+  margin-top: 50px;
+}
