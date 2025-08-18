@@ -1,6 +1,7 @@
 import React, { Component } from "react";
-import { Progress, Card } from "antd";
-import "antd/dist/antd.css";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
+import "./ReleaseDashboard.css"; // ✅ custom CSS file
 
 class ReleaseDashboard extends Component {
   state = {
@@ -9,10 +10,7 @@ class ReleaseDashboard extends Component {
         component: "cvams-orchestrator",
         snapshotstatus: "success",
         releasestatus: "success",
-        snapshotlink: "https://jenkins-link1",
-        releaselink: "https://jenkins-link2",
         rcstatus: "success",
-        miurl: "https://jenkins-mi-link1",
         overallStatus: "success",
         progress: 100,
       },
@@ -20,12 +18,17 @@ class ReleaseDashboard extends Component {
         component: "cvams-chat-data-service",
         snapshotstatus: "failed",
         releasestatus: "in-progress",
-        snapshotlink: "https://jenkins-link3",
-        releaselink: "https://jenkins-link4",
         rcstatus: "failed",
-        miurl: "https://jenkins-mi-link2",
         overallStatus: "in-progress",
         progress: 65,
+      },
+      {
+        component: "cvams-ui",
+        snapshotstatus: "in-progress",
+        releasestatus: "success",
+        rcstatus: "success",
+        overallStatus: "failed",
+        progress: 30,
       },
     ],
   };
@@ -37,132 +40,84 @@ class ReleaseDashboard extends Component {
       case "failed":
         return "red";
       case "in-progress":
-        return "gold"; // yellow
+        return "gold";
       default:
         return "grey";
     }
   };
 
-  renderStatusRow = (label, status, link) => (
-    <p style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-      <b>{label}:</b>
-      {/* Dot */}
-      <span
-        style={{
-          display: "inline-block",
-          width: "10px",
-          height: "10px",
-          borderRadius: "50%",
-          backgroundColor: this.getStatusColor(status),
-        }}
-      ></span>
-      <span>{status}</span>
-      {link && (
-        <a href={link} target="_blank" rel="noreferrer">
-          Jenkins Link
-        </a>
-      )}
-    </p>
-  );
-
   render() {
     return (
-      <div style={{ padding: "20px" }}>
-        <h2>Release Dashboard</h2>
+      <div className="dashboard-container">
+        <h2 className="dashboard-title">Release Dashboard</h2>
 
-        {/* Card Grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-            gap: "20px",
-          }}
-        >
-          {this.state.components.map((comp, index) => (
+        <div className="card-grid">
+          {this.state.components.map((comp, idx) => (
             <div
-              key={index}
+              key={idx}
+              className="status-card"
               style={{
-                display: "flex",
-                borderRadius: "10px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                overflow: "hidden",
-                background: "#fff",
+                borderLeft: `10px solid ${this.getStatusColor(
+                  comp.overallStatus
+                )}`,
               }}
             >
-              {/* Left Status Strip */}
-              <div
-                style={{
-                  width: "10px",
-                  backgroundColor: this.getStatusColor(comp.overallStatus),
-                }}
-              ></div>
+              <h3 className="card-title">{comp.component}</h3>
 
-              {/* Card Content */}
-              <Card
-                title={comp.component}
-                style={{ flex: 1, border: "none" }}
-                bodyStyle={{ padding: "15px" }}
-              >
-                {this.renderStatusRow(
-                  "Snapshot Status",
-                  comp.snapshotstatus,
-                  comp.snapshotlink
-                )}
-                {this.renderStatusRow(
-                  "Release Status",
-                  comp.releasestatus,
-                  comp.releaselink
-                )}
-                {this.renderStatusRow("MI Status", comp.rcstatus, comp.miurl)}
+              <p>
+                Snapshot Status:
+                <span
+                  className="status-dot"
+                  style={{ background: this.getStatusColor(comp.snapshotstatus) }}
+                ></span>
+                {comp.snapshotstatus}
+              </p>
 
-                <div style={{ textAlign: "center", marginTop: "15px" }}>
-                  <Progress
-                    type="circle"
-                    percent={comp.progress}
-                    strokeColor={this.getStatusColor(comp.overallStatus)}
-                  />
-                </div>
-              </Card>
+              <p>
+                Release Status:
+                <span
+                  className="status-dot"
+                  style={{ background: this.getStatusColor(comp.releasestatus) }}
+                ></span>
+                {comp.releasestatus}
+              </p>
+
+              <p>
+                MI Status:
+                <span
+                  className="status-dot"
+                  style={{ background: this.getStatusColor(comp.rcstatus) }}
+                ></span>
+                {comp.rcstatus}
+              </p>
+
+              <div className="progress-container">
+                <CircularProgressbar
+                  value={comp.progress}
+                  text={`${comp.progress}%`}
+                  styles={buildStyles({
+                    textColor: "#333",
+                    pathColor: this.getStatusColor(comp.overallStatus),
+                    trailColor: "#eee",
+                  })}
+                />
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Legend Section */}
-        <div style={{ marginTop: "30px" }}>
+        {/* Legend */}
+        <div className="legend-container">
           <h3>Status Legend</h3>
-          <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span
-                style={{
-                  width: "12px",
-                  height: "12px",
-                  borderRadius: "50%",
-                  backgroundColor: "green",
-                }}
-              ></span>
-              Success
+          <div className="legend-items">
+            <span className="legend-item">
+              <span className="legend-dot success"></span> Success
             </span>
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span
-                style={{
-                  width: "12px",
-                  height: "12px",
-                  borderRadius: "50%",
-                  backgroundColor: "red",
-                }}
-              ></span>
-              Failed
+            <span className="legend-item">
+              <span className="legend-dot failed"></span> Failed
             </span>
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span
-                style={{
-                  width: "12px",
-                  height: "12px",
-                  borderRadius: "50%",
-                  backgroundColor: "gold",
-                }}
-              ></span>
-              In Progress
+            <span className="legend-item">
+              <span className="legend-dot in-progress"></span> In Progress
             </span>
           </div>
         </div>
